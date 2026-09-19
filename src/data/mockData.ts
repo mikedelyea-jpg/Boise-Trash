@@ -105,6 +105,11 @@ export const FAQS: FaqItem[] = [
   },
   {
     category: 'billing',
+    question: 'How does credit card billing and payment work?',
+    answer: 'You can securely enter your credit card, debit card, Apple Pay, or Google Pay during checkout. Your card is billed once monthly with zero contracts. You can pause or cancel anytime, and we back every service with a 100% Punctuality Guarantee.',
+  },
+  {
+    category: 'billing',
     question: 'Is there a long-term contract or cancellation fee?',
     answer: 'Never! Our subscriptions are month-to-month. You can pause service when traveling for summer vacation, or cancel at any time with a single click or text message. No setup fees, no cancellation fees, no hidden surcharges.',
   },

@@ -9,11 +9,15 @@ import {
   Trash2, 
   ShieldCheck, 
   ArrowRight, 
-  ArrowLeft,
-  Lock,
-  Sparkles,
-  Camera,
-  Check
+  ArrowLeft, 
+  Lock, 
+  Sparkles, 
+  Camera, 
+  Check,
+  CreditCard,
+  Building,
+  KeyRound,
+  CheckCircle
 } from 'lucide-react';
 import { ServiceQuote, BookingFormData } from '../types';
 import { SERVICE_ADDONS } from '../data/mockData';
@@ -50,12 +54,41 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     addons: initialQuote.selectedAddons,
     startDate: 'Next Available Pickup Day',
     specialRequests: '',
+    paymentMethod: 'credit_card',
   });
+
+  // Credit Card state
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'apple_pay' | 'google_pay'>('credit_card');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExp, setCardExp] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardZip, setCardZip] = useState(initialZip || '83702');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!isOpen) return null;
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 16);
+    const formatted = clean.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setCardNumber(formatted);
+  };
+
+  const handleExpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (clean.length >= 2) {
+      setCardExp(`${clean.slice(0, 2)}/${clean.slice(2)}`);
+    } else {
+      setCardExp(clean);
+    }
+  };
+
+  const handleCvcChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const clean = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCardCvc(clean);
+  };
 
   const validateStep1 = () => {
     const errs: Record<string, string> = {};
@@ -67,30 +100,69 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     return Object.keys(errs).length === 0;
   };
 
+  const validateStep3Payment = () => {
+    const errs: Record<string, string> = {};
+    if (paymentMethod === 'credit_card') {
+      const rawCard = cardNumber.replace(/\s/g, '');
+      if (!rawCard || rawCard.length < 15) {
+        errs.cardNumber = 'Please enter a valid 16-digit card number';
+      }
+      if (!cardExp || cardExp.length < 5) {
+        errs.cardExp = 'Valid MM/YY required';
+      }
+      if (!cardCvc || cardCvc.length < 3) {
+        errs.cardCvc = 'CVC required';
+      }
+      if (!cardName.trim()) {
+        errs.cardName = 'Name on card required';
+      }
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleNext = () => {
     if (step === 1) {
       if (!validateStep1()) return;
       setStep(2);
     } else if (step === 2) {
+      if (!cardName && formData.fullName) {
+        setCardName(formData.fullName);
+      }
+      if (!cardZip && formData.zipCode) {
+        setCardZip(formData.zipCode);
+      }
       setStep(3);
     }
   };
 
   const handleSubmitOrder = () => {
+    if (!validateStep3Payment()) return;
+
     setIsSubmitting(true);
+    const rawCard = cardNumber.replace(/\s/g, '');
+    const last4 = rawCard.slice(-4) || '4242';
+
+    const completeBooking: BookingFormData = {
+      ...formData,
+      paymentMethod,
+      cardLast4: last4,
+      cardExp: cardExp || '12/28',
+    };
+
     setTimeout(() => {
       setIsSubmitting(false);
       setStep(4); // Success view
       // Save locally
       try {
         const existing = JSON.parse(localStorage.getItem('trash_valet_bookings') || '[]');
-        existing.push({ ...formData, bookedAt: new Date().toISOString() });
+        existing.push({ ...completeBooking, bookedAt: new Date().toISOString() });
         localStorage.setItem('trash_valet_bookings', JSON.stringify(existing));
       } catch (e) {
         console.error(e);
       }
-      onBookingComplete?.(formData);
-    }, 900);
+      onBookingComplete?.(completeBooking);
+    }, 950);
   };
 
   return (
@@ -331,19 +403,19 @@ export const BookingModal: React.FC<BookingModalProps> = ({
             </div>
           )}
 
-          {/* STEP 3: Review & Final Confirmation */}
+          {/* STEP 3: Review & Final Confirmation with Secure Payment */}
           {step === 3 && (
             <div className="space-y-5 animate-in fade-in duration-200">
               <div>
-                <h4 className="text-lg font-bold text-stone-900">Review & Confirm Service</h4>
-                <p className="text-xs text-stone-500">No payment charged right now — pay after your first successful pickup.</p>
+                <h4 className="text-lg font-bold text-stone-900">Payment & Service Activation</h4>
+                <p className="text-xs text-stone-500">Enter your card info to activate your curbside valet route. 100% money-back guarantee.</p>
               </div>
 
               {/* Order Summary Box */}
-              <div className="bg-stone-50 rounded-2xl p-5 border border-stone-200 space-y-3 text-sm">
+              <div className="bg-stone-50 rounded-2xl p-4 sm:p-5 border border-stone-200 space-y-3 text-sm">
                 <div className="flex justify-between items-center pb-2 border-b border-stone-200 font-bold text-stone-900">
                   <span>Selected Plan:</span>
-                  <span className="text-emerald-800 uppercase tracking-wide text-xs bg-emerald-100 px-2 py-0.5 rounded">
+                  <span className="text-emerald-800 uppercase tracking-wide text-xs bg-emerald-100 px-2.5 py-0.5 rounded-md font-extrabold">
                     {formData.frequency} Service
                   </span>
                 </div>
@@ -352,31 +424,198 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <div><strong>Address:</strong> {formData.streetAddress}, {formData.zipCode}</div>
                   <div><strong>Contact:</strong> {formData.fullName} ({formData.phone})</div>
                   <div><strong>Pickup Day:</strong> {formData.pickupDay} (Round-trip)</div>
-                  <div><strong>Bins:</strong> {initialQuote.binCount} Bins ({initialQuote.driveway} driveway)</div>
-                  <div><strong>Storage:</strong> {formData.binLocationNotes}</div>
-                  <div><strong>Photo Alerts:</strong> SMS Enabled (Free)</div>
+                  <div><strong>Bins:</strong> {initialQuote.binCount} Cans ({initialQuote.driveway} driveway)</div>
+                  <div><strong>Bin Location:</strong> {formData.binLocationNotes}</div>
+                  <div><strong>SMS Photo Proof:</strong> Included Free</div>
                 </div>
 
                 <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
-                  <span className="font-extrabold text-stone-900 text-base">Monthly Rate:</span>
+                  <div>
+                    <span className="font-extrabold text-stone-900 text-base">Monthly Total:</span>
+                    <span className="block text-[11px] text-stone-500">Billed monthly • Pause or cancel anytime</span>
+                  </div>
                   <div className="text-right">
                     <span className="text-2xl font-black text-stone-900">${initialQuote.totalMonthlyRate}</span>
-                    <span className="text-xs text-stone-500"> / month</span>
+                    <span className="text-xs font-semibold text-stone-500"> / month</span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-emerald-50/70 rounded-xl border border-emerald-200 text-xs text-stone-700 space-y-1.5">
-                <div className="flex items-center gap-2 font-bold text-emerald-900">
-                  <Sparkles className="w-4 h-4 text-emerald-600" />
-                  <span>The Trash Valet Promise:</span>
+              {/* Secure Credit Card Payment Section */}
+              <div className="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-stone-100">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-extrabold text-stone-900">Payment Information</h5>
+                      <span className="text-[11px] text-stone-500">Encrypted 256-bit SSL transaction</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md">
+                    <Lock className="w-3 h-3 text-emerald-600" />
+                    <span>Secure Checkout</span>
+                  </div>
                 </div>
-                <div>• Zero contracts — pause or cancel anytime with 1 click</div>
-                <div>• 100% Punctuality Guarantee: If we ever miss your cans, that entire month is free</div>
-                <div>• First payment invoiced securely via email/SMS after your first week of service</div>
+
+                {/* Payment Method Selector */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('credit_card')}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      paymentMethod === 'credit_card'
+                        ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
+                        : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Credit Card</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('apple_pay')}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      paymentMethod === 'apple_pay'
+                        ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
+                        : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span> Apple Pay</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('google_pay')}
+                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      paymentMethod === 'google_pay'
+                        ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
+                        : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span>G Pay</span>
+                  </button>
+                </div>
+
+                {paymentMethod === 'credit_card' ? (
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 mb-1">
+                        Name on Card *
+                      </label>
+                      <input
+                        type="text"
+                        id="booking-card-name"
+                        value={cardName}
+                        onChange={(e) => setCardName(e.target.value)}
+                        placeholder="First and Last Name"
+                        className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      {errors.cardName && <span className="text-[11px] text-rose-600 font-medium">{errors.cardName}</span>}
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-bold text-stone-700">Card Number *</label>
+                        <div className="flex items-center gap-1 text-[10px] font-semibold text-stone-400">
+                          <span>Visa</span>
+                          <span>•</span>
+                          <span>Mastercard</span>
+                          <span>•</span>
+                          <span>Amex</span>
+                          <span>•</span>
+                          <span>Discover</span>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          id="booking-card-number"
+                          value={cardNumber}
+                          onChange={handleCardNumberChange}
+                          placeholder="4242 •••• •••• 4242"
+                          maxLength={19}
+                          className="w-full bg-stone-50 border border-stone-300 rounded-xl pl-10 pr-3.5 py-2.5 text-sm font-mono font-semibold tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <CreditCard className="w-4 h-4 text-stone-400 absolute left-3.5 top-3" />
+                      </div>
+                      {errors.cardNumber && <span className="text-[11px] text-rose-600 font-medium">{errors.cardNumber}</span>}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 mb-1">Expiration *</label>
+                        <input
+                          type="text"
+                          id="booking-card-exp"
+                          value={cardExp}
+                          onChange={handleExpChange}
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        {errors.cardExp && <span className="text-[11px] text-rose-600 font-medium">{errors.cardExp}</span>}
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <label className="block text-xs font-bold text-stone-700">CVC / CVV *</label>
+                          <Lock className="w-3 h-3 text-stone-400" />
+                        </div>
+                        <input
+                          type="password"
+                          id="booking-card-cvc"
+                          value={cardCvc}
+                          onChange={handleCvcChange}
+                          placeholder="•••"
+                          maxLength={4}
+                          className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-mono font-semibold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        {errors.cardCvc && <span className="text-[11px] text-rose-600 font-medium">{errors.cardCvc}</span>}
+                      </div>
+
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-xs font-bold text-stone-700 mb-1">Billing ZIP</label>
+                        <input
+                          type="text"
+                          id="booking-card-zip"
+                          value={cardZip}
+                          onChange={(e) => setCardZip(e.target.value)}
+                          placeholder="83702"
+                          maxLength={5}
+                          className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 px-4 bg-stone-50 rounded-xl border border-stone-200 text-center space-y-2">
+                    <p className="text-xs text-stone-600">
+                      {paymentMethod === 'apple_pay'
+                        ? 'Apple Pay will authorize instantly when you click the confirmation button below.'
+                        : 'Google Pay will prompt for one-tap verification when you click below.'}
+                    </p>
+                    <div className="inline-flex items-center gap-1.5 text-emerald-800 text-xs font-bold bg-emerald-100/70 px-3 py-1 rounded-full">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Biometric FaceID / Fingerprint Checkout</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="pt-4 flex justify-between items-center">
+              <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 text-xs text-stone-700 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-emerald-950">
+                  <Sparkles className="w-4 h-4 text-emerald-600" />
+                  <span>The Boise Trash Valet Guarantee:</span>
+                </div>
+                <div>• <strong>No lock-in contracts:</strong> Pause or cancel anytime online or via text.</div>
+                <div>• <strong>100% Punctuality Guarantee:</strong> If we ever fail to roll your cans out in time for municipal pickup, that entire month is refunded free.</div>
+                <div>• <strong>SMS Dispatch:</strong> You receive an automatic timestamped photo every time your cans are placed curbside and returned.</div>
+              </div>
+
+              <div className="pt-2 flex justify-between items-center">
                 <button
                   type="button"
                   onClick={() => setStep(2)}
@@ -391,13 +630,17 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   id="confirm-booking-final-btn"
                   disabled={isSubmitting}
                   onClick={handleSubmitOrder}
-                  className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-base px-7 py-3.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2 cursor-pointer"
+                  className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm sm:text-base px-6 sm:px-8 py-3.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2.5 cursor-pointer"
                 >
                   {isSubmitting ? (
-                    <span>Registering Route...</span>
+                    <span className="flex items-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Processing Card...</span>
+                    </span>
                   ) : (
                     <>
-                      <span>Confirm & Activate Valet</span>
+                      <Lock className="w-4 h-4" />
+                      <span>Authorize & Start Valet (${initialQuote.totalMonthlyRate}/mo)</span>
                       <CheckCircle2 className="w-5 h-5" />
                     </>
                   )}
@@ -432,11 +675,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </p>
               </div>
 
-              <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 max-w-md mx-auto text-xs text-stone-600 text-left space-y-1">
-                <div className="font-bold text-stone-900">What Happens Next:</div>
-                <div>1. Our route dispatcher reviews your gate instructions.</div>
-                <div>2. You'll get an SMS reminder the afternoon before your first roll-out.</div>
-                <div>3. Relax inside—we take care of the rest!</div>
+              <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 max-w-md mx-auto text-xs text-stone-600 text-left space-y-1.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-stone-200">
+                  <span className="font-bold text-stone-900">Payment Status:</span>
+                  <span className="text-emerald-700 font-extrabold flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>Card Authorized (•••• {cardNumber.replace(/\s/g, '').slice(-4) || '4242'})</span>
+                  </span>
+                </div>
+                <div className="font-bold text-stone-900 pt-1">What Happens Next:</div>
+                <div>1. Our route dispatcher assigns your local Boise/Garden City valet.</div>
+                <div>2. You'll receive a text reminder the evening before your scheduled pickup day.</div>
+                <div>3. Relax inside — we take care of the heavy rolling both ways!</div>
               </div>
 
               <div className="pt-4">
