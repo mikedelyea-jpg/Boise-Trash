@@ -10,6 +10,7 @@ import { Testimonials } from './components/Testimonials';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { BookingModal } from './components/BookingModal';
+import { StructuredData } from './components/StructuredData';
 import { ServiceQuote, BookingFormData } from './types';
 
 // Centralized section IDs so child components and scroll targets can't drift out of sync.
@@ -159,6 +160,9 @@ export default function App() {
         initialZip={bookingZip}
         onBookingComplete={handleBookingComplete}
       />
+
+      {/* SEO Schema.org JSON-LD Structured Data */}
+      <StructuredData />
     </div>
   );
 }
