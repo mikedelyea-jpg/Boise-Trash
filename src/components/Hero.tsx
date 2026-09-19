@@ -46,7 +46,7 @@ export const Hero: React.FC<HeroProps> = ({ onOpenBooking, onCheckArea, onExplor
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-stone-900 leading-[1.12]">
               We roll your trash out <br className="hidden sm:inline" />
-              <span className="text-emerald-700 underline decoration-emerald-300 decoration-wavy decoration-2">
+              <span className="text-emerald-700">
                 before trash day.
               </span><br />
               And roll it back in.
