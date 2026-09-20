@@ -184,6 +184,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking, onCheckArea, onOp
             Customer Tracker Demo
           </button>
           <button
+            onClick={() => scrollToSection('neighbor-referrals')}
+            className="w-full text-left py-2 text-emerald-700 font-bold hover:text-emerald-800 border-b border-stone-100 flex items-center justify-between"
+          >
+            <span>Neighbor $15 Share Program</span>
+            <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-extrabold">Give $15, Get $15</span>
+          </button>
+          <button
             onClick={() => scrollToSection('faq')}
             className="w-full text-left py-2 text-stone-800 font-semibold hover:text-emerald-700 border-b border-stone-100"
           >
