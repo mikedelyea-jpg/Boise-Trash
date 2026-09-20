@@ -161,25 +161,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         formData,
       };
 
-      let response: Response;
-      try {
-        response = await fetch('/api/create-checkout-session', {
+      let response: Response | null = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(() => null);
+
+      if (!response || !response.ok) {
+        // Fallback directly to /.netlify/functions path in case /api/ rewrite is not yet active
+        const fallbackRes = await fetch('/.netlify/functions/create-checkout-session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
-        });
-      } catch (networkErr) {
-        // Fallback directly to /.netlify/functions path
-        response = await fetch('/.netlify/functions/create-checkout-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        }).catch(() => null);
+        
+        if (fallbackRes && fallbackRes.ok) {
+          response = fallbackRes;
+        }
       }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Checkout service returned HTTP ${response.status}`);
+      if (!response || !response.ok) {
+        const errorData = response ? await response.json().catch(() => ({})) : {};
+        throw new Error(errorData.error || (response ? `Checkout service returned HTTP ${response.status}` : 'Could not reach Stripe checkout server.'));
       }
 
       const data = await response.json();
