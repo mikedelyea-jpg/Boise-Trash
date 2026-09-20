@@ -6,6 +6,7 @@ import { PricingCalculator } from './components/PricingCalculator';
 import { ServiceAreaChecker } from './components/ServiceAreaChecker';
 import { ValetTrackerDemo } from './components/ValetTrackerDemo';
 import { TargetAudience } from './components/TargetAudience';
+import { ReferralSection } from './components/ReferralSection';
 import { Testimonials } from './components/Testimonials';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
@@ -68,6 +69,19 @@ export default function App() {
   const handleBookingComplete = useCallback((booking: BookingFormData) => {
     setActiveCustomer(booking);
     setIsBannerDismissed(false);
+  }, []);
+
+  const handleClaimReferral = useCallback((code: string) => {
+    setActiveQuote(prev => {
+      const discount = 15;
+      return {
+        ...prev,
+        promoCode: code,
+        promoDiscount: discount,
+        totalMonthlyRate: Math.max(10, prev.baseMonthlyRate - discount),
+      };
+    });
+    setIsBookingOpen(true);
   }, []);
 
   const openBookingNoArgs = useCallback(() => handleOpenBooking(), [handleOpenBooking]);
@@ -136,6 +150,9 @@ export default function App() {
 
       {/* Target Audiences: Who Needs Trash Valet */}
       <TargetAudience onSelectAudience={openBookingNoArgs} />
+
+      {/* Neighbor Referral & Community Cluster Program */}
+      <ReferralSection onClaimDiscount={handleClaimReferral} />
 
       {/* Interactive Neighborhood Coverage & Zip Code Checker */}
       <ServiceAreaChecker onStartBookingWithZip={handleStartBookingWithZip} />

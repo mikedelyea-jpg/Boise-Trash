@@ -398,16 +398,33 @@ export const PricingCalculator: React.FC<PricingCalculatorProps> = ({ onSelectPl
                 )}
               </form>
 
-              {/* Action Button */}
-              <button
-                id="book-this-plan-btn"
-                type="button"
-                onClick={() => onSelectPlan(quote)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-base py-4 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer group"
-              >
-                <span>Start Service With This Plan</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
+              {/* Action Buttons: Standard Start & Instant Stripe Checkout */}
+              <div className="space-y-2.5">
+                <button
+                  id="book-this-plan-btn"
+                  type="button"
+                  onClick={() => onSelectPlan(quote)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-base py-3.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                >
+                  <span>Start Service With This Plan</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <button
+                  id="stripe-direct-checkout-btn"
+                  type="button"
+                  onClick={() => {
+                    onSelectPlan(quote);
+                  }}
+                  className="w-full bg-stone-900 hover:bg-black text-white font-bold text-xs sm:text-sm py-3 px-4 rounded-xl border border-stone-800 flex items-center justify-center gap-2 cursor-pointer transition-all hover:border-[#635BFF]/50 group"
+                >
+                  <span className="text-stone-400">Instant Subscribe via</span>
+                  <span className="font-extrabold text-[#635BFF] text-base tracking-tight">stripe</span>
+                  <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-semibold ml-1">
+                    ${quote.totalMonthlyRate}/mo
+                  </span>
+                </button>
+              </div>
 
               {/* Trust Guarantees under button */}
               <div className="mt-4 pt-3 border-t border-stone-100 flex flex-col gap-1 text-[11px] text-stone-500 font-medium text-center">

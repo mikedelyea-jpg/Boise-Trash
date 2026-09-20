@@ -93,6 +93,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenBooking, onCheckArea, onOp
               Customer Tracker
             </button>
             <button 
+              id="nav-referrals-btn"
+              onClick={() => scrollToSection('neighbor-referrals')} 
+              className="hover:text-emerald-700 transition-colors cursor-pointer text-emerald-700 font-bold flex items-center gap-1"
+            >
+              <span>Neighbor $15</span>
+            </button>
+            <button 
               id="nav-faq-btn"
               onClick={() => scrollToSection('faq')} 
               className="hover:text-emerald-700 transition-colors cursor-pointer"

@@ -460,24 +460,37 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
 
                 {/* Payment Method Selector */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('credit_card')}
-                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       paymentMethod === 'credit_card'
                         ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
                         : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
                     }`}
                   >
                     <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
-                    <span>Credit Card</span>
+                    <span>Card / Debit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('stripe_checkout')}
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      paymentMethod === 'stripe_checkout'
+                        ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 ring-1 ring-indigo-600'
+                        : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="font-extrabold text-[#635BFF]">stripe</span>
+                    <span>Checkout</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('apple_pay')}
-                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       paymentMethod === 'apple_pay'
                         ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
                         : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
@@ -489,7 +502,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setPaymentMethod('google_pay')}
-                    className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                       paymentMethod === 'google_pay'
                         ? 'border-emerald-600 bg-emerald-50/60 text-emerald-950 ring-1 ring-emerald-600'
                         : 'border-stone-200 bg-stone-50/50 text-stone-700 hover:bg-stone-100'
@@ -499,7 +512,25 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   </button>
                 </div>
 
-                {paymentMethod === 'credit_card' ? (
+                {paymentMethod === 'stripe_checkout' ? (
+                  <div className="p-5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-indigo-900 text-sm">Stripe Hosted Subscription Checkout</span>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-200/80 text-indigo-900 px-2 py-0.5 rounded">
+                        Stripe 1-Click
+                      </span>
+                    </div>
+                    <p className="text-xs text-indigo-900/80 leading-relaxed">
+                      You will be securely routed through Stripe's verified PCI-DSS level 1 subscription portal. Supports Apple Pay, Google Pay, Bank Debit, and all major cards with automatic monthly renewal and zero contract lock-ins.
+                    </p>
+                    <div className="flex items-center gap-2 text-[11px] text-indigo-950 font-semibold bg-white/80 p-2.5 rounded-lg border border-indigo-100">
+                      <ShieldCheck className="w-4 h-4 text-[#635BFF] shrink-0" />
+                      <span>Instant receipt emailed & automatic route activation sent to dispatch@boisetrashvalet.com</span>
+                    </div>
+                  </div>
+                ) : paymentMethod === 'credit_card' ? (
                   <div className="space-y-3 pt-1">
                     <div>
                       <label className="block text-xs font-bold text-stone-700 mb-1">
@@ -630,13 +661,23 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   id="confirm-booking-final-btn"
                   disabled={isSubmitting}
                   onClick={handleSubmitOrder}
-                  className="bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-sm sm:text-base px-6 sm:px-8 py-3.5 rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2.5 cursor-pointer"
+                  className={`font-extrabold text-sm sm:text-base px-6 sm:px-8 py-3.5 rounded-xl shadow-lg transition-all flex items-center gap-2.5 cursor-pointer ${
+                    paymentMethod === 'stripe_checkout'
+                      ? 'bg-[#635BFF] hover:bg-[#5349e4] text-white shadow-indigo-600/25'
+                      : 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-emerald-600/25'
+                  }`}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Processing Card...</span>
+                      <span>{paymentMethod === 'stripe_checkout' ? 'Redirecting to Stripe...' : 'Processing Card...'}</span>
                     </span>
+                  ) : paymentMethod === 'stripe_checkout' ? (
+                    <>
+                      <Lock className="w-4 h-4" />
+                      <span>Pay with Stripe • ${initialQuote.totalMonthlyRate}/mo</span>
+                      <ArrowRight className="w-5 h-5" />
+                    </>
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />

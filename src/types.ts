@@ -39,9 +39,11 @@ export interface BookingFormData {
   addons: string[];
   startDate: string;
   specialRequests?: string;
-  paymentMethod?: 'credit_card' | 'apple_pay' | 'google_pay';
+  paymentMethod?: 'credit_card' | 'apple_pay' | 'google_pay' | 'stripe_checkout';
   cardLast4?: string;
   cardExp?: string;
+  referredByNeighbor?: string;
+  referralCode?: string;
 }
 
 export interface Testimonial {

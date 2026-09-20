@@ -2,12 +2,20 @@ import { PlanAddon, Testimonial, FaqItem } from '../types';
 
 export const SERVICE_ADDONS: PlanAddon[] = [
   {
+    id: 'power_wash_sanitizing',
+    name: 'Monthly Trash Can Power-Wash & High-Heat Sanitizing',
+    priceMonthly: 19,
+    pricePerService: 5,
+    description: 'Professional 200°F high-pressure wash, biological degreaser scrub, and antimicrobial deodorizer applied monthly. Eliminates bacteria, grime, and foul summer bin stench.',
+    iconName: 'Sparkles',
+  },
+  {
     id: 'sanitizing_spray',
     name: 'Can Odor Defense & Sanitizing Spray',
     priceMonthly: 12,
     pricePerService: 3,
     description: 'Eco-friendly citrus enzyme spray applied to bin interior monthly to eliminate maggots, flies, and stubborn foul odors.',
-    iconName: 'Sparkles',
+    iconName: 'SprayCan',
   },
   {
     id: 'handle_wipe',
@@ -112,6 +120,16 @@ export const FAQS: FaqItem[] = [
     category: 'billing',
     question: 'Is there a long-term contract or cancellation fee?',
     answer: 'Never! Our subscriptions are month-to-month. You can pause service when traveling for summer vacation, or cancel at any time with a single click or text message. No setup fees, no cancellation fees, no hidden surcharges.',
+  },
+  {
+    category: 'service',
+    question: 'How does the Monthly Trash Can Power-Wash & Sanitizing add-on work?',
+    answer: 'Once per month immediately following trash collection, our mobile sanitation unit cleans your empty carts using 200°F high-pressure wash, eco-friendly biological degreasers, and hospital-grade antimicrobial deodorizers. It removes sticky food sludge, maggots, flies, and foul odors, leaving your cans looking brand new and smelling fresh.',
+  },
+  {
+    category: 'billing',
+    question: 'How does the Neighbor Referral $15 discount work?',
+    answer: 'When you share code BOISE-NEIGHBOR-15 with any neighbor on your street or in your HOA, they immediately get $15 off their first month. Once they subscribe, you automatically receive a $15 credit toward your next bill. If 3 neighbors on your street join, your service for that month is virtually free!',
   },
   {
     category: 'service',
