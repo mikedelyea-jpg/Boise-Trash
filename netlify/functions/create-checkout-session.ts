@@ -121,11 +121,72 @@ export const handler: Handler = async (event) => {
       }
     }
 
-    // 4. Create Stripe Checkout Session
+    // Prepare human-readable list of add-ons
+    const addonNamesList: string[] = [];
+    if (Array.isArray(quote.selectedAddons)) {
+      for (const addonId of quote.selectedAddons) {
+        const addon = SERVICE_ADDONS_LOOKUP[addonId];
+        if (addon) addonNamesList.push(addon.name);
+      }
+    }
+
+    const orderMetadata = {
+      customerName: formData?.fullName || '',
+      customerPhone: formData?.phone || '',
+      serviceAddress: `${formData?.streetAddress || ''}, ${formData?.city || 'Boise'}, ${formData?.zipCode || ''}`,
+      pickupDay: formData?.pickupDay || 'Not specified',
+      binCount: `${quote.binCount || 2} Cans`,
+      serviceFrequency: frequencyLabel,
+      drivewayType: quote.driveway || 'Standard',
+      selectedAddons: addonNamesList.length > 0 ? addonNamesList.join('; ') : 'None',
+      canLocationNotes: formData?.binLocationNotes || 'None provided',
+      gateCodeOrNotes: formData?.gateCodeOrInstructions || 'None',
+      monthlyTotal: `$${quote.totalMonthlyRate || baseRate}/mo`,
+    };
+
+    // 4. Pre-create customer record with full service address and phone so it appears directly on their Stripe profile
+    let customerId: string | undefined = undefined;
+    try {
+      const customer = await stripe.customers.create({
+        name: formData?.fullName || undefined,
+        email: formData?.email || undefined,
+        phone: formData?.phone || undefined,
+        address: {
+          line1: formData?.streetAddress || '',
+          city: formData?.city || 'Boise',
+          state: 'ID',
+          postal_code: formData?.zipCode || '',
+          country: 'US',
+        },
+        shipping: {
+          name: formData?.fullName || 'Valet Customer',
+          phone: formData?.phone || '',
+          address: {
+            line1: formData?.streetAddress || '',
+            city: formData?.city || 'Boise',
+            state: 'ID',
+            postal_code: formData?.zipCode || '',
+            country: 'US',
+          },
+        },
+        metadata: orderMetadata,
+      });
+      customerId = customer.id;
+    } catch (custErr) {
+      console.warn('Could not pre-create customer with address, falling back to session creation:', custErr);
+    }
+
+    // 5. Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: formData?.email || undefined,
+      customer: customerId,
+      customer_email: customerId ? undefined : (formData?.email || undefined),
+      customer_update: customerId ? {
+        address: 'auto',
+        name: 'auto',
+        shipping: 'auto',
+      } : undefined,
       line_items: lineItems,
       discounts,
       billing_address_collection: 'auto',
@@ -135,20 +196,13 @@ export const handler: Handler = async (event) => {
       phone_number_collection: {
         enabled: true,
       },
+      subscription_data: {
+        description: `${quote.binCount || 2} Cans • ${frequencyLabel} • ${formData?.streetAddress || 'Boise, ID'}`,
+        metadata: orderMetadata,
+      },
+      metadata: orderMetadata,
       success_url: `${cleanOrigin}/?booking=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${cleanOrigin}/?booking=cancelled`,
-      metadata: {
-        customerName: formData?.fullName || '',
-        customerPhone: formData?.phone || '',
-        customerAddress: `${formData?.streetAddress || ''}, ${formData?.city || 'Boise'}, ${formData?.zipCode || ''}`,
-        pickupDay: formData?.pickupDay || '',
-        binLocationNotes: formData?.binLocationNotes || '',
-        gateCode: formData?.gateCodeOrInstructions || '',
-        binCount: String(quote.binCount || 2),
-        frequency: quote.frequency || 'weekly',
-        driveway: quote.driveway || 'standard',
-        totalMonthly: String(quote.totalMonthlyRate || baseRate),
-      },
     });
 
     return {
