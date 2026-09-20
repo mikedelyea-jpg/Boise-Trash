@@ -1,0 +1,5 @@
+# Netlify redirects file to ensure SPA routing and direct static file access
+/sitemap.xml    /sitemap.xml    200
+/robots.txt     /robots.txt     200
+/favicon.svg    /favicon.svg    200
+/*              /index.html     200
