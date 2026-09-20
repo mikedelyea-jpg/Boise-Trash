@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { HowItWorks } from './components/HowItWorks';
@@ -39,6 +39,25 @@ export default function App() {
   const [activeQuote, setActiveQuote] = useState<ServiceQuote>(DEFAULT_QUOTE);
   const [activeCustomer, setActiveCustomer] = useState<BookingFormData | null>(null);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
+  const [justSubscribedWithStripe, setJustSubscribedWithStripe] = useState(false);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('booking') === 'success') {
+        const cached = JSON.parse(localStorage.getItem('trash_valet_pending_booking') || '{}');
+        if (cached.fullName) {
+          setActiveCustomer(cached);
+          setIsBannerDismissed(false);
+          setJustSubscribedWithStripe(true);
+        }
+        // Clean URL query params without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
 
   const handleOpenBooking = useCallback((customQuote?: ServiceQuote) => {
     if (customQuote) {

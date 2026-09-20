@@ -17,7 +17,8 @@ import {
   CreditCard,
   Building,
   KeyRound,
-  CheckCircle
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { ServiceQuote, BookingFormData } from '../types';
 import { SERVICE_ADDONS } from '../data/mockData';
@@ -57,8 +58,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     paymentMethod: 'credit_card',
   });
 
-  // Credit Card state
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'stripe_checkout' | 'apple_pay' | 'google_pay'>('credit_card');
+  // Credit Card & Stripe state
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'stripe_checkout' | 'apple_pay' | 'google_pay'>('stripe_checkout');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExp, setCardExp] = useState('');
   const [cardCvc, setCardCvc] = useState('');
@@ -66,6 +67,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [cardZip, setCardZip] = useState(initialZip || '83702');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stripeError, setStripeError] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   if (!isOpen) return null;
@@ -136,7 +138,70 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     }
   };
 
+  const handleStripeCheckout = async () => {
+    setIsSubmitting(true);
+    setStripeError('');
+
+    try {
+      // 1. Save user's booking details to local storage so they don't lose anything
+      try {
+        const existing = JSON.parse(localStorage.getItem('trash_valet_pending_booking') || '{}');
+        localStorage.setItem('trash_valet_pending_booking', JSON.stringify({
+          ...formData,
+          quote: initialQuote,
+          savedAt: new Date().toISOString()
+        }));
+      } catch (e) {
+        console.error('Failed to cache pending booking', e);
+      }
+
+      // 2. Call Netlify Serverless Function with full dynamic quote breakdown
+      const payload = {
+        quote: initialQuote,
+        formData,
+      };
+
+      let response: Response;
+      try {
+        response = await fetch('/api/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (networkErr) {
+        // Fallback directly to /.netlify/functions path
+        response = await fetch('/.netlify/functions/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Checkout service returned HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.url) {
+        // Redirect to Stripe's secure checkout page
+        window.location.href = data.url;
+      } else {
+        throw new Error('Stripe session did not provide a redirect URL.');
+      }
+    } catch (err: any) {
+      console.error('Stripe Checkout Error:', err);
+      setStripeError(err?.message || 'Could not connect to Stripe checkout. Please try again or reserve without payment.');
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmitOrder = () => {
+    if (paymentMethod === 'stripe_checkout' || paymentMethod === 'apple_pay' || paymentMethod === 'google_pay') {
+      handleStripeCheckout();
+      return;
+    }
+
     if (!validateStep3Payment()) return;
 
     setIsSubmitting(true);
@@ -635,6 +700,35 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   </div>
                 )}
               </div>
+
+              {stripeError && (
+                <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 space-y-2 animate-in fade-in">
+                  <div className="flex items-center gap-2 font-bold text-rose-800">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>Checkout Notice</span>
+                  </div>
+                  <p>{stripeError}</p>
+                  <div className="pt-1 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStripeCheckout()}
+                      className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer"
+                    >
+                      Retry Stripe Checkout
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentMethod('credit_card');
+                        setStripeError('');
+                      }}
+                      className="bg-white border border-rose-300 text-rose-800 font-bold px-3 py-1.5 rounded-lg text-xs hover:bg-rose-50 cursor-pointer"
+                    >
+                      Switch to Direct Card Entry
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 text-xs text-stone-700 space-y-1.5">
                 <div className="flex items-center gap-2 font-bold text-emerald-950">
