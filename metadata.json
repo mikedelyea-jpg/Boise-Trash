@@ -1,6 +1,6 @@
 {
-  "name": "Trash Valet - Boise & Garden City Curbside Roll-Out Service",
-  "description": "Never drag heavy trash cans again or miss pickup day in Boise or Garden City. We roll your bins out before collection and return them promptly after service.",
+  "name": "Boise Trash Valet - Curbside Trash & Recycling Roll-Out Service",
+  "description": "Boise Trash Valet provides reliable curbside roll-out service in Boise & Garden City. We roll your trash, recycling, and compost bins out before pickup and back after collection.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
