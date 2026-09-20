@@ -58,7 +58,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   });
 
   // Credit Card state
-  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'apple_pay' | 'google_pay'>('credit_card');
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'stripe_checkout' | 'apple_pay' | 'google_pay'>('credit_card');
   const [cardNumber, setCardNumber] = useState('');
   const [cardExp, setCardExp] = useState('');
   const [cardCvc, setCardCvc] = useState('');
